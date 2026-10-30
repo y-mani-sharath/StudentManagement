@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, redirect
 import sqlite3
+from database import get_db
+
 app = Flask(__name__)
 # Database connection
 def connect_db():
@@ -56,6 +58,29 @@ def delete(id):
             "DELETE FROM students WHERE id=?", (id,)
         )
     return redirect("/")
+
+# Week 8(b): Search students
+@app.route("/search", methods=["GET"])
+def search():
+    query = request.args.get("q", "").strip()
+
+    with get_db() as con:
+        students = con.execute(
+            """
+            SELECT id, name, email, department
+            FROM students
+            WHERE name LIKE ?
+               OR email LIKE ?
+               OR department LIKE ?
+            """,
+            (f"%{query}%", f"%{query}%", f"%{query}%")
+        ).fetchall()
+
+    return render_template(
+        "search.html",
+        students=students,
+        query=query
+    )
 
 if __name__ == "__main__":
     app.run(debug=True,port = 5001)
